@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Import the logic functions and types
 import { generatePuzzle, Difficulty, PuzzleData } from '../utils/sudokuLogic'; // Adjust path based on your exact structure
 import { PASTEL_COLORS } from '../constants/colors'; // Adjust path based on your exact structure
+import { color } from '@rneui/base';
 
 // Define actions for the appReducer
 type AppAction =
@@ -21,7 +22,9 @@ dispatch: React.Dispatch<AppAction>;
 const HomeScreen = ({ dispatch }: HomeScreenProps) => { // Add type for props
     const insets = useSafeAreaInsets();
   
-    const randomPastelColor = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]);
+      const currentPalette = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]).current;
+      const gameAccentColor = currentPalette.primary; 
+      const gameDarkerAccentColor = currentPalette.darker;
   
     const handleStartGame = (difficulty: Difficulty) => { // Use Difficulty type
       const { puzzle, solution } = generatePuzzle(difficulty);
@@ -33,26 +36,26 @@ const HomeScreen = ({ dispatch }: HomeScreenProps) => { // Add type for props
       <View style={[
         styles.homeContainer,
         { paddingTop: insets.top, paddingBottom: insets.bottom },
-        { backgroundColor: randomPastelColor.current}
+        { backgroundColor: gameAccentColor }
       ]}>
-        <Text style={styles.homeTitle}>Zen Sudoku</Text>
+        <Text style={[styles.homeTitle, {color: gameDarkerAccentColor}]}>Pixoku</Text>
         <TouchableOpacity
-          style={styles.difficultyButton}
+          style={[styles.difficultyButton, {backgroundColor: gameDarkerAccentColor }]}
           onPress={() => handleStartGame('easy')}
         >
-          <Text style={styles.difficultyButtonText}>Easy</Text>
+          <Text style={styles.difficultyButtonText}>easy</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.difficultyButton}
+          style={[styles.difficultyButton, {backgroundColor: gameDarkerAccentColor }]}
           onPress={() => handleStartGame('medium')}
         >
-          <Text style={styles.difficultyButtonText}>Medium</Text>
+          <Text style={styles.difficultyButtonText}>medium</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.difficultyButton}
-          onPress={() => handleStartGame('hard')}
+          style={[styles.difficultyButton, {backgroundColor: gameDarkerAccentColor }]}
+          onPress={() => handleStartGame('hard')}  
         >
-          <Text style={styles.difficultyButtonText}>Hard</Text>
+          <Text style={styles.difficultyButtonText}>hard</Text>
         </TouchableOpacity>
       </View>
     );
@@ -70,16 +73,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   homeTitle: {
-    fontSize: 36,
+    fontSize: 50,
+    fontFamily: 'pixelart',
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 40,
+    marginTop: 20,
+    marginBottom: 20,
     textShadowColor: 'rgba(0,0,0,0.1)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   difficultyButton: {
-    // backgroundColor: '#81C784', // This will be overridden by the dynamic color
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -94,6 +98,7 @@ const styles = StyleSheet.create({
   },
   difficultyButtonText: {
     fontSize: 22,
+    fontFamily: 'pixelart',
     fontWeight: '600',
     color: '#FFFFFF',
   },

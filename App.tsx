@@ -1,6 +1,6 @@
 // App.tsx
 
-import React, { useReducer } from 'react'; // Removed unused hooks
+import React, { useReducer, useState, useEffect } from 'react'; // Removed unused hooks
 import { StyleSheet, View, Text } from 'react-native'; // Keep necessary RN imports
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -12,6 +12,10 @@ import GameScreen from './src/screens/GameScreen';
 // It's good practice to centralize shared types or define them in appReducer's file.
 // For now, let's keep them explicit if needed by App.tsx directly or passed as props.
 import { PuzzleData } from './src/utils/sudokuLogic'; // Only PuzzleData is needed here directly for AppState
+
+import * as Font from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+
 
 // --- App Component Types ---
 type AppState = {
@@ -38,10 +42,57 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
 
 // --- Main App Component ---
 const App = () => {
+
   const [appState, dispatch] = useReducer(appReducer, {
     currentScreen: 'Home',
     gameData: null,
   } as AppState);
+
+  const [appIsReady, setAppIsReady] = useState(false); // New state to track if fonts/assets are loaded
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Keep the splash screen visible while we fetch resources
+        await SplashScreen.preventAutoHideAsync();
+
+        // Pre-load fonts, images, make any API calls you need to
+        await Font.loadAsync({
+          'pixelart': require('./assets/fonts/pixelart.ttf'), // Make sure path is correct
+          // Add other fonts here if needed
+        });
+
+        // Artificially delay for demonstration purposes (optional)
+        // await new Promise(resolve => setTimeout(resolve, 2000));
+
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        // Tell the application to render
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []); // Run once on component mount
+
+  // Hide splash screen once app is ready to render
+  useEffect(() => {
+    if (appIsReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  // --- END FONT LOADING STATE ---
+
+  // Display a loading screen or null until app is ready
+  if (!appIsReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading App Assets...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>

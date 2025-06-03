@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,7 +8,17 @@ import { PASTEL_COLORS } from '../constants/colors';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
+const numberImages = [
+    require("../../assets/horse.png"),      // Horse = 1
+    require("../../assets/chicken.png"),    // Chicken = 2
+    require("../../assets/cow.png"),        // Cow = 3
+    require("../../assets/dog.png"),        // Dog = 4
+    require("../../assets/sheep.png"),      // Sheep = 5
+    require("../../assets/goat.png"),       // Goat = 6
+    require("../../assets/duck.png"),       // Duck = 7
+    require("../../assets/pig.png"),        // Pig = 8
+    require("../../assets/rabbit.png"),     // Rabbit = 9
+]
 
 // --- Define Types specific to this screen ---
 // These types were previously in App.tsx. It's better to keep types close to where they are used,
@@ -31,7 +41,9 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
   const [showErrors, setShowErrors] = useState<boolean>(true);
   const [isSolved, setIsSolved] = useState<boolean>(false);
 
-  const randomPastelColor = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]);
+  const currentPalette = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]).current;
+  const gameAccentColor = currentPalette.primary; 
+  const gameDarkerAccentColor = currentPalette.darker;
 
   const lastTapTimeRef = useRef(0);
   const lastTappedCellRef = useRef<[number, number] | null>(null);
@@ -153,17 +165,37 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
     }
   };
 
+  const numberCounts = useMemo(() => {
+    const counts: { [key: number]: number } = {};
+    for (let i = 1; i <= 9; i++) {
+      counts[i] = 0; // Initialize counts for 1-9
+    }
+    board.forEach(rowArr => {
+      rowArr.forEach(cellValue => {
+        if (cellValue !== 0 && counts[cellValue] !== undefined) {
+          counts[cellValue]++;
+        }
+      });
+    });
+    return counts;
+  }, [board]); // Recalculate whenever the board changes
+
+  // --- NEW: Determine if a number button should be disabled ---
+  const isNumberUsedUp = useCallback((num: number): boolean => {
+    return numberCounts[num] === 9;
+  }, [numberCounts]);
+
 
   return (
     <View style={[styles.gameContainer,
      { paddingTop: insets.top, paddingBottom: insets.bottom },
-     { backgroundColor: randomPastelColor.current }
+     { backgroundColor: gameAccentColor }
      ]}>
       <TouchableOpacity
           style={styles.gameTitle}
           onPress={handleNewGameRequest}
         >
-          <Text style={styles.gameTitle}>Pixoku</Text>
+          <Text style={[styles.gameTitle, { color: gameDarkerAccentColor }]}>Pixoku</Text>
         </TouchableOpacity>
       {isSolved && <TouchableOpacity
           style={styles.solvedMessage}
@@ -177,9 +209,9 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
                 onPress={() => setShowErrors(!showErrors)}
             >
             {showErrors ? (
-                <Icon name="eye-off-outline" size={32} color="#FFFFFF" /> // Eye with slash for "Hide"
+                <Icon name="eye-off-outline" size={32} color={ gameDarkerAccentColor } /> // Eye with slash for "Hide"
             ) : (
-                <Icon name="eye-outline" size={32} color="#FFFFFF" /> // Open eye for "Show"
+                <Icon name="eye-outline" size={32} color={ gameDarkerAccentColor } /> // Open eye for "Show"
             )}
         </TouchableOpacity>
 
@@ -208,15 +240,17 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
                   onPress={() => handleCellTap(rowIndex, colIndex)}
                   disabled={isInitial || isSolved}
                 >
-                  <Text
-                    style={[
-                      styles.cellText,
-                      isInitial ? styles.initialText : styles.userText,
-                      isConflict ? styles.conflictText : {},
-                    ]}
-                  >
-                    {cellValue !== 0 ? cellValue : ''}
-                  </Text>
+                  {cellValue !== 0 ? (
+                <Image
+                  source={numberImages[cellValue - 1]} // Use cellValue to pick correct image (value 1 is index 0)
+                  style={styles.cellImage} // Define this style for width/height
+                  resizeMode="contain" // Or 'cover', 'stretch', 'center'
+                />
+              ) : (
+                <Text style={styles.cellText}>
+                  {''} {/* Empty string for empty cells */}
+                </Text>
+              )}
                 </TouchableOpacity>
               );
             })}
@@ -225,16 +259,30 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
       </View>
 
       <View style={styles.numberPad}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-          <TouchableOpacity
-            key={num}
-            style={styles.numberButton}
-            onPress={() => handleNumberInput(num)}
-            disabled={isSolved}
-          >
-            <Text style={styles.numberButtonText}>{num}</Text>
-          </TouchableOpacity>
-        ))}
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+            const shouldHideButton = isNumberUsedUp(num);
+
+            if (shouldHideButton) {
+              // If the number is used up, return a placeholder or null to hide it.
+              // Using a transparent View maintains the grid layout, preventing other buttons from shifting.
+              return <View key={num} style={styles.numberButtonPlaceholder} />;
+            }
+
+            return (
+                <TouchableOpacity
+                    key={num}
+                    style={[styles.numberButton, {backgroundColor: '#FFFFFF'}]}
+                    onPress={() => handleNumberInput(num)}
+                    disabled={isSolved || isNumberUsedUp(num)}
+                >
+                    <Image
+                source={numberImages[num - 1]}
+                style={styles.numberButtonImage} // Define this style
+                resizeMode="contain"
+                />
+                </TouchableOpacity>
+            );
+        })}
       </View>
 
       
@@ -250,15 +298,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: '#E0F2F7', // This will be overridden by the dynamic color if you put one there
+    backgroundColor: '#E0F2F7',
     paddingHorizontal: 10,
   },
   gameTitle: {
-    fontSize: 30,
+    fontSize: 50,
+    fontFamily: 'pixelart',
     fontWeight: 'bold',
     color: '#2C3E50',
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 5,
     textShadowColor: 'rgba(0,0,0,0.1)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
@@ -333,6 +382,15 @@ const styles = StyleSheet.create({
     borderColor: '#BDC3C7',
     borderBottomColor: '#34495E',
   },
+  cellImage: {
+    width: '80%', // Adjust width as needed for images to fit in cells
+    height: '80%', // Adjust height
+    // Ensure images don't stretch beyond cell boundaries
+  },
+  numberButtonImage: {
+    width: '70%', // Adjust width as needed for images to fit buttons
+    height: '70%', // Adjust height
+  },
   numberPad: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -358,6 +416,12 @@ const styles = StyleSheet.create({
     fontSize: Dimensions.get('window').width * 0.04,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  numberButtonPlaceholder: {
+    width: Dimensions.get('window').width * 0.09,
+    aspectRatio: 1,
+    margin: Dimensions.get('window').width * 0.005,
+    backgroundColor: 'transparent', // Make it invisible
   },
   controls: {
     flexDirection: 'row',
