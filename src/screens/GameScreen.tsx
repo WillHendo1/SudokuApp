@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
   gameTitle: {
     fontSize: 50,
     fontFamily: 'pixelart',
-    fontWeight: 'bold',
     color: '#2C3E50',
     marginTop: 20,
     marginBottom: 5,
@@ -430,19 +429,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   controlButton: {
-    backgroundColor: '#95A5A6', // This will be overridden by the dynamic color
+    backgroundColor: '#95A5A6', 
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  controlButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });

@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
   homeTitle: {
     fontSize: 50,
     fontFamily: 'pixelart',
-    fontWeight: 'bold',
     color: '#2C3E50',
     marginTop: 20,
     marginBottom: 20,
