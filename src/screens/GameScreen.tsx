@@ -62,6 +62,7 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
         Alert.alert("Congratulations!", "You solved the puzzle!");
       } else {
         // If full but not correct, it's an invalid solution
+        Alert.alert("Hmmm...", "It seems you haven't filled it in properly.");
       }
     } else {
       setIsSolved(false);
@@ -144,8 +145,8 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
   const handleNewGameRequest = () => {
     if (!isSolved) { // Only ask for confirmation if the puzzle is not solved
       Alert.alert(
-        "Start New Game?",
-        "You haven't finished this puzzle yet. Are you sure you want to start a new one?",
+        "Return to Homescreen?",
+        "You haven't finished this puzzle yet and you will lose your progress.",
         [
           {
             text: "Cancel",
@@ -180,10 +181,31 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
     return counts;
   }, [board]); // Recalculate whenever the board changes
 
-  // --- NEW: Determine if a number button should be disabled ---
+  // --- Determine if a number button should be disabled ---
   const isNumberUsedUp = useCallback((num: number): boolean => {
     return numberCounts[num] === 9;
   }, [numberCounts]);
+
+  const showControlsAlert = () => {
+    Alert.alert(
+      "Game Controls", // Alert Title
+      "Tap a cell to select it.\n\n" + // Alert Message
+      "Tap a number from the pad to enter it into the selected cell.\n\n" +
+      "Double-tap a cell to clear the number you entered.\n\n" +
+      "Numbers given at the start cannot be changed.\n\n" +
+      "Use the 'Clear' button to remove the selected user-entered number.\n\n" +
+      "Use the 'Show/Hide Errors' button to toggle error highlighting.\n\n" +
+      "Tap 'New Game' or 'Pixoku' title to start a new puzzle.",
+      [
+        {
+          text: "Got It!", // Button text
+          onPress: () => console.log("Controls alert closed"),
+          style: "cancel" // Styling for the button (e.g., 'cancel' or 'default')
+        }
+      ],
+      { cancelable: true } // Allow user to tap outside to dismiss on Android
+    );
+  };
 
 
   return (
@@ -191,29 +213,41 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
      { paddingTop: insets.top, paddingBottom: insets.bottom },
      { backgroundColor: gameAccentColor }
      ]}>
-      <TouchableOpacity
-          style={styles.gameTitle}
-          onPress={handleNewGameRequest}
-        >
-          <Text style={[styles.gameTitle, { color: gameDarkerAccentColor }]}>Pixoku</Text>
-        </TouchableOpacity>
-      {isSolved && <TouchableOpacity
-          style={styles.solvedMessage}
-          onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Home' })}
-        >
-          <Text style={styles.solvedMessage}>Puzzle Solved!</Text>
-        </TouchableOpacity>}
-
+      <View style={styles.headerContainer}>
         <TouchableOpacity
-                style={[styles.controlButton, { backgroundColor: 'transparent' }]}
-                onPress={() => setShowErrors(!showErrors)}
-            >
-            {showErrors ? (
-                <Icon name="eye-off-outline" size={32} color={ gameDarkerAccentColor } /> // Eye with slash for "Hide"
-            ) : (
-                <Icon name="eye-outline" size={32} color={ gameDarkerAccentColor } /> // Open eye for "Show"
-            )}
-        </TouchableOpacity>
+            style={styles.titleContainer}
+            onPress={handleNewGameRequest}
+          >
+            <Text style={[styles.gameTitle, { color: gameDarkerAccentColor }]}>Pixoku</Text>
+          </TouchableOpacity>
+        {isSolved && <TouchableOpacity
+            onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Home' })}
+          >
+            <Text style={styles.solvedMessage}>Puzzle Solved!</Text>
+          </TouchableOpacity>}
+        
+        <View style={styles.buttonColumn}>
+          <TouchableOpacity
+                  style={[styles.controlButton, { backgroundColor: 'transparent' }]}
+                  onPress={showControlsAlert}
+              >
+              {<Icon name="information-outline" size={28} color={ gameDarkerAccentColor } />}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+                  style={[styles.controlButton, { backgroundColor: 'transparent' }]}
+                  onPress={() => setShowErrors(!showErrors)}
+              >
+              {showErrors ? (
+                  <Icon name="eye-off-outline" size={28} color={ gameDarkerAccentColor } /> // Eye with slash for "Hide"
+              ) : (
+                  <Icon name="eye-outline" size={28} color={ gameDarkerAccentColor } /> // Open eye for "Show"
+              )}
+          </TouchableOpacity>
+        </View>
+        
+      </View>
+      
 
       <View style={styles.grid}>
         {board.map((rowArr, rowIndex) => ( // Renamed 'row' param to 'rowArr' to avoid conflict with 'row' in `selectedCell`
@@ -244,7 +278,7 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
                 <Image
                   source={numberImages[cellValue - 1]} // Use cellValue to pick correct image (value 1 is index 0)
                   style={styles.cellImage} // Define this style for width/height
-                  resizeMode="contain" // Or 'cover', 'stretch', 'center'
+                  resizeMode="contain"
                 />
               ) : (
                 <Text style={styles.cellText}>
@@ -298,19 +332,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: '#E0F2F7',
     paddingHorizontal: 10,
   },
-  gameTitle: {
-    fontSize: 50,
-    fontFamily: 'pixelart',
-    color: '#2C3E50',
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
     marginTop: 20,
-    marginBottom: 5,
+    marginBottom: 10,
+    marginHorizontal: 5,
+  },
+  titleContainer: {
+    flex: 1,
+  },
+  gameTitle: {
+    fontSize: 60,
+    fontFamily: 'pixelart',
+    textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.1)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
+  buttonColumn: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  }, 
+  controlButton: {
+    paddingVertical: 3,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+  }, 
   solvedMessage: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -328,6 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
+    marginTop: 20,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -398,8 +454,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   numberButton: {
-    backgroundColor: '#A5D6A7', // This will be overridden by the dynamic color
-    width: Dimensions.get('window').width * 0.09,
+    width: Dimensions.get('window').width * 0.17,
     aspectRatio: 1,
     borderRadius: 8,
     justifyContent: 'center',
@@ -427,11 +482,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '90%',
     marginBottom: 20,
-  },
-  controlButton: {
-    backgroundColor: '#95A5A6', 
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
   },
 });

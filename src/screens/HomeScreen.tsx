@@ -1,25 +1,22 @@
-import React, { useRef } from 'react'; // Added useRef
+import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppAction, AppState } from '../../App';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Import the logic functions and types
-import { generatePuzzle, Difficulty, PuzzleData } from '../utils/sudokuLogic'; // Adjust path based on your exact structure
-import { PASTEL_COLORS } from '../constants/colors'; // Adjust path based on your exact structure
-import { color } from '@rneui/base';
-
-// Define actions for the appReducer
-type AppAction =
-  | { type: 'SET_SCREEN'; payload: 'Home' | 'Game' }
-  | { type: 'SET_GAME_DATA'; payload: PuzzleData };
+import { generatePuzzle, Difficulty, PuzzleData } from '../utils/sudokuLogic';
+import { PASTEL_COLORS } from '../constants/colors';
 
 // Define props for HomeScreen
 type HomeScreenProps = {
-dispatch: React.Dispatch<AppAction>;
+  dispatch: React.Dispatch<AppAction>;
+  appState: AppState;
 };
   
 
 // HomeScreen Component
-const HomeScreen = ({ dispatch }: HomeScreenProps) => { // Add type for props
+const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
     const insets = useSafeAreaInsets();
   
       const currentPalette = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]).current;
@@ -39,6 +36,10 @@ const HomeScreen = ({ dispatch }: HomeScreenProps) => { // Add type for props
         { backgroundColor: gameAccentColor }
       ]}>
         <Text style={[styles.homeTitle, {color: gameDarkerAccentColor}]}>Pixoku</Text>
+        <View style={styles.currencyDisplay}>
+        <Text style={styles.currencyText}>{appState.pixos}</Text>
+          <Icon name="arrange-bring-to-front" size={24} color="#FFD700" />
+      </View>
         <TouchableOpacity
           style={[styles.difficultyButton, {backgroundColor: gameDarkerAccentColor }]}
           onPress={() => handleStartGame('easy')}
@@ -57,6 +58,12 @@ const HomeScreen = ({ dispatch }: HomeScreenProps) => { // Add type for props
         >
           <Text style={styles.difficultyButtonText}>hard</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.difficultyButton, { backgroundColor: gameDarkerAccentColor, marginTop: 30 }]} // Adjust margin as needed
+          onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Store' })}
+      >
+        <Text style={styles.difficultyButtonText}>Visit Store</Text>
+      </TouchableOpacity>
       </View>
     );
   };
@@ -73,7 +80,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   homeTitle: {
-    fontSize: 50,
+    fontSize: 60,
     fontFamily: 'pixelart',
     color: '#2C3E50',
     marginTop: 20,
@@ -81,6 +88,20 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.1)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  currencyDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: 'rgba(255,215,0,0.2)',
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+  currencyText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginRight: 5,
   },
   difficultyButton: {
     paddingVertical: 15,
