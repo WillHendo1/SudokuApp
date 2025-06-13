@@ -8,17 +8,108 @@ import { PASTEL_COLORS } from '../constants/colors';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const numberImages = [
-    require("../../assets/horse.png"),      // Horse = 1
-    require("../../assets/chicken.png"),    // Chicken = 2
-    require("../../assets/cow.png"),        // Cow = 3
-    require("../../assets/dog.png"),        // Dog = 4
-    require("../../assets/sheep.png"),      // Sheep = 5
-    require("../../assets/goat.png"),       // Goat = 6
-    require("../../assets/duck.png"),       // Duck = 7
-    require("../../assets/pig.png"),        // Pig = 8
-    require("../../assets/rabbit.png"),     // Rabbit = 9
-]
+  // This function maps a cosmetic ID (like 'panda_set') to its actual image array.
+  const getImageSet = (setName: string) => {
+    switch (setName) {
+        case 'farm_set':
+            return [
+                require('../../assets/images/farm_set/chicken.png'),
+                require('../../assets/images/farm_set/cow.png'),
+                require('../../assets/images/farm_set/rooster.png'),
+                require('../../assets/images/farm_set/sheep.png'),
+                require('../../assets/images/farm_set/pig.png'),
+                require('../../assets/images/farm_set/goat.png'),
+                require('../../assets/images/farm_set/horse.png'),
+                require('../../assets/images/farm_set/rabbit.png'),
+                require('../../assets/images/farm_set/yellow-bird.png'),
+            ];
+        case 'fish_set':
+            return [
+                require('../../assets/images/fish_set/light-gray-fish.png'),
+                require('../../assets/images/fish_set/brown-fish.png'),
+                require('../../assets/images/fish_set/great-white-shark.png'),
+                require('../../assets/images/fish_set/lobster.png'),
+                require('../../assets/images/fish_set/hammerhead-shark.png'),
+                require('../../assets/images/fish_set/red-fish.png'),
+                require('../../assets/images/fish_set/whale.png'),
+                require('../../assets/images/fish_set/gray-fish.png'),
+                require('../../assets/images/fish_set/dark-orange-fish.png'),
+            ];
+        case 'forest_set':
+            return [
+                require('../../assets/images/forest_set/squirrel.png'),
+                require('../../assets/images/forest_set/hedgehog.png'),
+                require('../../assets/images/forest_set/fox.png'),
+                require('../../assets/images/forest_set/wolf.png'),
+                require('../../assets/images/forest_set/mouse.png'),
+                require('../../assets/images/forest_set/bear.png'),
+                require('../../assets/images/forest_set/green-parrot.png'),
+                require('../../assets/images/forest_set/monkey.png'),
+                require('../../assets/images/forest_set/deer.png'),
+            ];
+        case 'desert_set':
+            return [
+                require('../../assets/images/desert_set/wildebeest.png'),
+                require('../../assets/images/desert_set/camel.png'),
+                require('../../assets/images/desert_set/buffalo.png'),
+                require('../../assets/images/desert_set/boar.png'),
+                require('../../assets/images/desert_set/rhino.png'),
+                require('../../assets/images/desert_set/elephant.png'),
+                require('../../assets/images/desert_set/vulture.png'),
+                require('../../assets/images/desert_set/antelope.png'),
+                require('../../assets/images/desert_set/giraffe.png'),
+            ];
+        case 'ocean_set':
+            return [
+                require('../../assets/images/ocean_set/dolphin.png'),
+                require('../../assets/images/ocean_set/octopus.png'),
+                require('../../assets/images/ocean_set/seagull.png'),
+                require('../../assets/images/ocean_set/stingray.png'),
+                require('../../assets/images/ocean_set/squid.png'),
+                require('../../assets/images/ocean_set/clam.png'),
+                require('../../assets/images/ocean_set/crab.png'),
+                require('../../assets/images/ocean_set/starfish.png'),
+                require('../../assets/images/ocean_set/seahorse.png'),                
+            ];
+        case 'animal_set':
+            return [
+                require('../../assets/images/animal_set/brown-rabbit.png'),
+                require('../../assets/images/animal_set/dog.png'),
+                require('../../assets/images/animal_set/toucan.png'),
+                require('../../assets/images/animal_set/seabird.png'),
+                require('../../assets/images/animal_set/red-bird.png'),
+                require('../../assets/images/animal_set/donkey.png'),
+                require('../../assets/images/animal_set/kangaroo.png'),
+                require('../../assets/images/animal_set/yellow-fish.png'),
+                require('../../assets/images/animal_set/ostrich.png'),
+            ];
+        case 'pet_set':
+            return [
+                require('../../assets/images/pet_set/beige-dog.png'),
+                require('../../assets/images/pet_set/orange-cat.png'),
+                require('../../assets/images/pet_set/pug.png'),
+                require('../../assets/images/pet_set/brown-dog.png'),
+                require('../../assets/images/pet_set/ginger-dog.png'),
+                require('../../assets/images/pet_set/gray-cat.png'),
+                require('../../assets/images/pet_set/yellow-dog.png'),
+                require('../../assets/images/pet_set/light-cat.png'),
+                require('../../assets/images/pet_set/gray-dog.png'),
+            ];
+        default:
+            console.warn(`Image set "${setName}" not found, defaulting to panda_set.`);
+            return [ // Fallback to panda if set name is not found
+                require('../../assets/images/panda_1.png'),
+                require('../../assets/images/panda_2.png'),
+                require('../../assets/images/panda_3.png'),
+                require('../../assets/images/panda_4.png'),
+                require('../../assets/images/panda_5.png'),
+                require('../../assets/images/panda_6.png'),
+                require('../../assets/images/panda_7.png'),
+                require('../../assets/images/panda_8.png'),
+                require('../../assets/images/panda_9.png'),
+            ];
+    }
+  };
 
 // --- Define Types specific to this screen ---
 // These types were previously in App.tsx. It's better to keep types close to where they are used,
@@ -30,11 +121,12 @@ type AppAction =
 type GameScreenProps = {
   gameData: PuzzleData;
   dispatch: React.Dispatch<AppAction>;
+  equippedImageSetName: string;
 };
 
 
 // GameScreen Component
-const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type for props
+const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProps) => { // Add type for props
   const insets = useSafeAreaInsets();
   const [board, setBoard] = useState<Board>(gameData.puzzle); // Specify Board type for useState
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null); // Type for selected cell
@@ -48,6 +140,9 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
   const lastTapTimeRef = useRef(0);
   const lastTappedCellRef = useRef<[number, number] | null>(null);
   const DOUBLE_TAP_THRESHOLD = 500;
+
+  const activeNumberImages = useMemo(() => getImageSet(equippedImageSetName), [getImageSet, equippedImageSetName]);
+
 
   // You'll need to update the PuzzleData type in sudokuLogic.ts
   // to include initialPuzzle, as it's being passed here.
@@ -276,7 +371,7 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
                 >
                   {cellValue !== 0 ? (
                 <Image
-                  source={numberImages[cellValue - 1]} // Use cellValue to pick correct image (value 1 is index 0)
+                  source={activeNumberImages[cellValue - 1]} // Use cellValue to pick correct image (value 1 is index 0)
                   style={styles.cellImage} // Define this style for width/height
                   resizeMode="contain"
                 />
@@ -310,7 +405,7 @@ const GameScreen = ({ gameData, dispatch }: GameScreenProps) => { // Add type fo
                     disabled={isSolved || isNumberUsedUp(num)}
                 >
                     <Image
-                source={numberImages[num - 1]}
+                source={activeNumberImages[num - 1]}
                 style={styles.numberButtonImage} // Define this style
                 resizeMode="contain"
                 />

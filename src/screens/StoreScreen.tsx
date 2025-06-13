@@ -15,16 +15,12 @@ type CosmeticItem = {
   name: string;
   cost: number;
   image: any; // Use `any` for require() path, or string for URL
-  type: 'grid_image' | 'theme_accent' | 'background'; // Example types
-  value?: string; // e.g., hex color for theme_accent, or image key for grid_image
+  type: 'grid_image'
+  value?: string; // image key for grid_image
 };
 
 const COSMETIC_ITEMS: CosmeticItem[] = [
-  { id: 'item_panda_set', name: 'Panda Numbers', cost: 0, image: require('../../assets/chicken.png'), type: 'grid_image', value: 'panda_set' },
-  { id: 'item_cat_set', name: 'Cat Numbers', cost: 500, image: require('../../assets/chicken.png'), type: 'grid_image', value: 'cat_set' }, // You'd need to create cat images!
-  { id: 'item_dog_set', name: 'Dog Numbers', cost: 500, image: require('../../assets/chicken.png'), type: 'grid_image', value: 'dog_set' }, // And dog images!
-  { id: 'theme_gold', name: 'Golden Theme', cost: 200, image: null, type: 'theme_accent', value: '#FFD700' },
-  { id: 'theme_lavender', name: 'Lavender Theme', cost: 200, image: null, type: 'theme_accent', value: '#DBCDF0' },
+  { id: 'item_farm_set', name: 'Farm Animal Numbers', cost: 500, image: require('../../assets/farm_set/chicken.png'), type: 'grid_image', value: 'farm_set' },
   // Add more cosmetic items here
 ];
 // --- END COSMETIC ITEM DATA ---
@@ -35,8 +31,12 @@ type StoreScreenProps = {
 };
 
 const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
-  const insets = useSafeAreaInsets();
-  const { pixos, unlockedItems, equippedCosmetic } = appState;
+    const insets = useSafeAreaInsets();
+    const { pixos, unlockedItems, equippedCosmetic } = appState;
+
+    const currentPalette = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]).current;
+    const gameAccentColor = currentPalette.primary; 
+    const gameDarkerAccentColor = currentPalette.darker;
 
   const handleBuyItem = (item: CosmeticItem) => {
     if (unlockedItems.includes(item.id)) {
@@ -75,18 +75,14 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
     const isOwned = unlockedItems.includes(item.id);
     const isEquipped = equippedCosmetic === item.id;
 
-    // Determine visual style based on item type if it's a color theme
-    let itemPreviewStyle: any = null;
-    if (item.type === 'theme_accent' && item.value) {
-      itemPreviewStyle = { backgroundColor: item.value + '80' }; // Use item's value as background
-    }
-
     return (
       <View style={styles.storeItemContainer}>
         {item.image ? (
           <Image source={item.image} style={styles.storeItemImage} resizeMode="contain" />
         ) : (
-          <View style={[styles.storeItemImagePlaceholder, itemPreviewStyle]} /> // Placeholder for non-image items
+        <View style={styles.storeItemImagePlaceholder}>
+            <Text style={styles.noImagePlaceholderText}>No Image</Text> {/* Or an Icon */}
+        </View>
         )}
         <Text style={styles.storeItemName}>{item.name}</Text>
         <Text style={styles.storeItemCost}>{isOwned ? 'Owned' : `${item.cost} pixos`}</Text>
@@ -108,13 +104,13 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
   };
 
   return (
-    <View style={[styles.storeContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.storeContainer, { backgroundColor: gameAccentColor, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.storeHeader}>
         <TouchableOpacity onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Home' })} style={styles.backButton}>
-          <Icon name="arrow-left" size={32} color={PASTEL_COLORS[0].darker} />
+          <Icon name="arrow-left" size={32} color={gameDarkerAccentColor} />
         </TouchableOpacity>
-        <Text style={styles.storeTitle}>Cosmetic Store</Text>
-        <View style={styles.currencyDisplay}>
+        <Text style={[styles.storeTitle, {color: gameDarkerAccentColor}]}>Pixel Packs</Text>
+        <View style={[styles.currencyDisplay, {backgroundColor: gameDarkerAccentColor}]}>
           <Text style={styles.currencyText}>{pixos}</Text>
           <Icon name="arrange-bring-to-front" size={24} color="#FFD700" />
         </View>
@@ -152,24 +148,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   backButton: {
-    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   storeTitle: {
-    fontSize: 28,
+    fontFamily: 'pixelart',
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50',
     flex: 1, // Allow title to take space
     textAlign: 'center',
-    marginLeft: -40, // Offset for back button
   },
   currencyDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    padding: 10,
     backgroundColor: 'rgba(255,215,0,0.2)',
     borderRadius: 20,
   },
   currencyText: {
+    fontFamily: 'pixelart',
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFD700',
@@ -187,7 +184,7 @@ const styles = StyleSheet.create({
     padding: 15,
     margin: 10,
     alignItems: 'center',
-    width: Dimensions.get('window').width / 2 - 20, // 2 columns with margin
+    width: Dimensions.get('window').width / 2 - 30, // 2 columns with margin
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -204,9 +201,13 @@ const styles = StyleSheet.create({
     height: 80,
     marginBottom: 10,
     borderRadius: 10,
-    backgroundColor: '#EEE', // Default placeholder color
+    backgroundColor: '#CCC', // A neutral gray placeholder
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  noImagePlaceholderText: { // New style for text in placeholder
+      fontSize: 12,
+      color: '#666',
   },
   storeItemName: {
     fontSize: 18,

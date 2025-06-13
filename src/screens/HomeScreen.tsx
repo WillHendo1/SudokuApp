@@ -36,7 +36,7 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
         { backgroundColor: gameAccentColor }
       ]}>
         <Text style={[styles.homeTitle, {color: gameDarkerAccentColor}]}>Pixoku</Text>
-        <View style={styles.currencyDisplay}>
+        <View style={[styles.currencyDisplay, {backgroundColor: gameDarkerAccentColor}]}>
         <Text style={styles.currencyText}>{appState.pixos}</Text>
           <Icon name="arrange-bring-to-front" size={24} color="#FFD700" />
       </View>
@@ -62,7 +62,7 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
           style={[styles.difficultyButton, { backgroundColor: gameDarkerAccentColor, marginTop: 30 }]} // Adjust margin as needed
           onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Store' })}
       >
-        <Text style={styles.difficultyButtonText}>Visit Store</Text>
+        <Text style={styles.difficultyButtonText}>PixelPacks</Text>
       </TouchableOpacity>
       </View>
     );
@@ -92,8 +92,7 @@ const styles = StyleSheet.create({
   currencyDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    backgroundColor: 'rgba(255,215,0,0.2)',
+    padding: 10,
     borderRadius: 20,
     marginBottom: 20,
   },
