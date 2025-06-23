@@ -8,6 +8,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { generatePuzzle, Difficulty, PuzzleData } from '../utils/sudokuLogic';
 import { PASTEL_COLORS } from '../constants/colors';
 
+
+
 // Define props for HomeScreen
 type HomeScreenProps = {
   dispatch: React.Dispatch<AppAction>;
@@ -25,7 +27,13 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
   
     const handleStartGame = (difficulty: Difficulty) => { // Use Difficulty type
       const { puzzle, solution } = generatePuzzle(difficulty);
-      dispatch({ type: 'SET_GAME_DATA', payload: { puzzle, solution, initialPuzzle: puzzle.map(row => [...row]) } }); // initialPuzzle needs to be added to PuzzleData type as well.
+      dispatch({ 
+        type: 'SET_GAME_DATA', 
+        payload: { 
+          puzzle, 
+          solution, 
+          initialPuzzle: puzzle.map(row => [...row]), 
+          difficulty } });
       dispatch({ type: 'SET_SCREEN', payload: 'Game' });
     };
   
@@ -62,7 +70,7 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
           style={[styles.difficultyButton, { backgroundColor: gameDarkerAccentColor, marginTop: 30 }]} // Adjust margin as needed
           onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Store' })}
       >
-        <Text style={styles.difficultyButtonText}>PixelPacks</Text>
+        <Text style={styles.difficultyButtonText}>store</Text>
       </TouchableOpacity>
       </View>
     );
@@ -76,7 +84,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: '#E0F2F7', // This will be overridden by the dynamic color above
     paddingHorizontal: 20,
   },
   homeTitle: {
@@ -98,7 +105,8 @@ const styles = StyleSheet.create({
   },
   currencyText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'pixelart',
+    fontWeight: 600,
     color: '#FFD700',
     marginRight: 5,
   },

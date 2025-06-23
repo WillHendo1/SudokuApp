@@ -6,6 +6,7 @@ export type PuzzleData = {
   puzzle: Board;
   solution: Solution;
   initialPuzzle: Board;
+  difficulty: Difficulty;
 };
 
 // Helper to check if a number is valid in a given cell (row, col, box)
@@ -169,7 +170,7 @@ const generatePuzzle = (difficulty: Difficulty): PuzzleData => {
       removedCount++;
     }
   }
-  return { puzzle, solution: solvedBoard,  initialPuzzle: puzzle};
+  return { puzzle, solution: solvedBoard,  initialPuzzle: puzzle, difficulty};
 };
 
 // Export all the functions you need to use elsewhere

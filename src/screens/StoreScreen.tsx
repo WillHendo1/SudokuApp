@@ -8,22 +8,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 // Import types from App.tsx or a shared types file
 import { AppAction, AppState } from '../../App'; // Adjust path if AppAction/AppState are elsewhere
 import { PASTEL_COLORS } from '../constants/colors';
+import { COSMETIC_ITEMS, CosmeticItem } from '../constants/cosmeticItems';
 
-// --- COSMETIC ITEM DATA (Define your items here!) ---
-type CosmeticItem = {
-  id: string;
-  name: string;
-  cost: number;
-  image: any; // Use `any` for require() path, or string for URL
-  type: 'grid_image'
-  value?: string; // image key for grid_image
-};
-
-const COSMETIC_ITEMS: CosmeticItem[] = [
-  { id: 'item_farm_set', name: 'Farm Animal Numbers', cost: 500, image: require('../../assets/farm_set/chicken.png'), type: 'grid_image', value: 'farm_set' },
-  // Add more cosmetic items here
-];
-// --- END COSMETIC ITEM DATA ---
 
 type StoreScreenProps = {
   dispatch: React.Dispatch<AppAction>;
@@ -74,6 +60,7 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
   const renderItem = ({ item }: { item: CosmeticItem }) => {
     const isOwned = unlockedItems.includes(item.id);
     const isEquipped = equippedCosmetic === item.id;
+    const canAfford = pixos >= item.cost; 
 
     return (
       <View style={styles.storeItemContainer}>
@@ -90,7 +77,8 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
           style={[
             styles.storeActionButton,
             isEquipped && styles.equippedActionButton,
-            !isOwned && styles.disabledActionButton,
+            !isOwned && !canAfford && styles.disabledActionButton,
+            !isOwned && canAfford && styles.affordableActionButton,
           ]}
           onPress={() => isOwned ? handleEquipItem(item) : handleBuyItem(item)}
           disabled={!isOwned && pixos < item.cost}
@@ -154,7 +142,6 @@ const styles = StyleSheet.create({
   storeTitle: {
     fontFamily: 'pixelart',
     fontSize: 32,
-    fontWeight: 'bold',
     flex: 1, // Allow title to take space
     textAlign: 'center',
   },
@@ -168,7 +155,6 @@ const styles = StyleSheet.create({
   currencyText: {
     fontFamily: 'pixelart',
     fontSize: 20,
-    fontWeight: 'bold',
     color: '#FFD700',
     marginRight: 5,
   },
@@ -210,8 +196,8 @@ const styles = StyleSheet.create({
       color: '#666',
   },
   storeItemName: {
+    fontFamily: 'pixelart',
     fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 5,
     textAlign: 'center',
   },
@@ -229,8 +215,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   storeActionButtonText: {
+    fontFamily: 'pixelart',
     color: '#FFFFFF',
-    fontWeight: 'bold',
     fontSize: 16,
   },
   equippedActionButton: {
@@ -238,5 +224,16 @@ const styles = StyleSheet.create({
   },
   disabledActionButton: {
     backgroundColor: '#BDBDBD', // Gray when disabled
+  },
+  affordableActionButton: {
+    backgroundColor: '#FFD700', // <--- A vibrant gold/yellow to indicate affordability
+    // You could also add a border here for extra emphasis:
+    // borderColor: '#FFA500',
+    // borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
   },
 });

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { Dialog, Button } from '@rneui/themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import the logic functions and types
 import { isValid, solveSudoku, Board, PuzzleData } from '../utils/sudokuLogic';
+import { AppAction, AppState } from '../../App'
 import { PASTEL_COLORS } from '../constants/colors';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -47,17 +49,17 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
                 require('../../assets/images/forest_set/monkey.png'),
                 require('../../assets/images/forest_set/deer.png'),
             ];
-        case 'desert_set':
+        case 'safari_set':
             return [
-                require('../../assets/images/desert_set/wildebeest.png'),
-                require('../../assets/images/desert_set/camel.png'),
-                require('../../assets/images/desert_set/buffalo.png'),
-                require('../../assets/images/desert_set/boar.png'),
-                require('../../assets/images/desert_set/rhino.png'),
-                require('../../assets/images/desert_set/elephant.png'),
-                require('../../assets/images/desert_set/vulture.png'),
-                require('../../assets/images/desert_set/antelope.png'),
-                require('../../assets/images/desert_set/giraffe.png'),
+                require('../../assets/images/safari_set/wildebeest.png'),
+                require('../../assets/images/safari_set/camel.png'),
+                require('../../assets/images/safari_set/buffalo.png'),
+                require('../../assets/images/safari_set/boar.png'),
+                require('../../assets/images/safari_set/rhino.png'),
+                require('../../assets/images/safari_set/elephant.png'),
+                require('../../assets/images/safari_set/vulture.png'),
+                require('../../assets/images/safari_set/antelope.png'),
+                require('../../assets/images/safari_set/giraffe.png'),
             ];
         case 'ocean_set':
             return [
@@ -97,26 +99,19 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
             ];
         default:
             console.warn(`Image set "${setName}" not found, defaulting to panda_set.`);
-            return [ // Fallback to panda if set name is not found
-                require('../../assets/images/panda_1.png'),
-                require('../../assets/images/panda_2.png'),
-                require('../../assets/images/panda_3.png'),
-                require('../../assets/images/panda_4.png'),
-                require('../../assets/images/panda_5.png'),
-                require('../../assets/images/panda_6.png'),
-                require('../../assets/images/panda_7.png'),
-                require('../../assets/images/panda_8.png'),
-                require('../../assets/images/panda_9.png'),
+            return [ // Fallback to farm set if set name is not found
+              require('../../assets/images/farm_set/chicken.png'),
+              require('../../assets/images/farm_set/cow.png'),
+              require('../../assets/images/farm_set/rooster.png'),
+              require('../../assets/images/farm_set/sheep.png'),
+              require('../../assets/images/farm_set/pig.png'),
+              require('../../assets/images/farm_set/goat.png'),
+              require('../../assets/images/farm_set/horse.png'),
+              require('../../assets/images/farm_set/rabbit.png'),
+              require('../../assets/images/farm_set/yellow-bird.png'),
             ];
     }
   };
-
-// --- Define Types specific to this screen ---
-// These types were previously in App.tsx. It's better to keep types close to where they are used,
-// or move shared types to a central types.ts file in src/.
-type AppAction =
-  | { type: 'SET_SCREEN'; payload: 'Home' | 'Game' }
-  | { type: 'SET_GAME_DATA'; payload: PuzzleData };
 
 type GameScreenProps = {
   gameData: PuzzleData;
@@ -143,6 +138,11 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
 
   const activeNumberImages = useMemo(() => getImageSet(equippedImageSetName), [getImageSet, equippedImageSetName]);
 
+  const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogButtons, setDialogButtons] = useState<any[]>([]);
+
 
   // You'll need to update the PuzzleData type in sudokuLogic.ts
   // to include initialPuzzle, as it's being passed here.
@@ -154,10 +154,46 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
       // Note: solveSudoku modifies the board in place, so pass a copy
       if (solveSudoku(tempBoard) && JSON.stringify(tempBoard) === JSON.stringify(gameData.solution)) {
         setIsSolved(true);
-        Alert.alert("Congratulations!", "You solved the puzzle!");
-      } else {
-        // If full but not correct, it's an invalid solution
-        Alert.alert("Hmmm...", "It seems you haven't filled it in properly.");
+        // --- Calculate reward based on difficulty ---
+        let pixosEarned = 0;
+        switch (gameData.difficulty) { // Access difficulty from gameData
+            case 'easy':
+                pixosEarned = 3;
+                break;
+            case 'medium':
+                pixosEarned = 5;
+                break;
+            case 'hard':
+                pixosEarned = 7;
+                break;
+            default:
+                pixosEarned = 1; // Fallback
+        }
+        showCustomDialog(
+          "Congratulations!",
+          `You solved the puzzle! You earned ${pixosEarned} pixos!`,
+          [
+            { text: "Awesome!", onPress: () => {
+                setIsDialogVisible(false); // Hide dialog
+                dispatch({ type: 'EARN_PIXOS', payload: pixosEarned });
+                dispatch({ type: 'SET_SCREEN', payload: 'Home' });
+            }}
+          ]
+        );
+      } else if (isBoardFull) {
+        setIsSolved(false);
+        showCustomDialog( // <--- Use custom dialog here
+          "Puzzle Failed!",
+          "The grid is full, but the solution is incorrect. Keep trying or start a new game!",
+          [
+            { text: "Keep Trying", onPress: () => setIsDialogVisible(false), type: "clear" }, // type="clear" for RNE buttons
+            { text: "New Game", onPress: () => {
+                setIsDialogVisible(false); // Hide dialog
+                dispatch({ type: 'SET_SCREEN', payload: 'Home' });
+            }, type: "clear" }
+          ],
+          false // Not cancelable
+        );
       }
     } else {
       setIsSolved(false);
@@ -239,21 +275,17 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
 
   const handleNewGameRequest = () => {
     if (!isSolved) { // Only ask for confirmation if the puzzle is not solved
-      Alert.alert(
-        "Return to Homescreen?",
-        "You haven't finished this puzzle yet and you will lose your progress.",
+      showCustomDialog(
+        "Start New Game?",
+        "You haven't finished this puzzle yet. Are you sure you want to start a new one?",
         [
-          {
-            text: "Cancel",
-            onPress: () => console.log("New game cancelled"),
-            style: "cancel" // On iOS, this button often appears on the left
-          },
-          {
-            text: "Yes, New Game",
-            onPress: () => dispatch({ type: 'SET_SCREEN', payload: 'Home' }) // Proceed to Home screen
-          }
+          { text: "Cancel", onPress: () => setIsDialogVisible(false), type: "clear" },
+          { text: "Yes, New Game", onPress: () => {
+              setIsDialogVisible(false); // Hide dialog
+              dispatch({ type: 'SET_SCREEN', payload: 'Home' });
+          }, type: "clear" }
         ],
-        { cancelable: false } // Prevent dismissing the alert by tapping outside
+        false
       );
     } else {
       // If the puzzle IS solved, just go straight to the Home screen
@@ -282,24 +314,32 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
   }, [numberCounts]);
 
   const showControlsAlert = () => {
-    Alert.alert(
-      "Game Controls", // Alert Title
-      "Tap a cell to select it.\n\n" + // Alert Message
-      "Tap a number from the pad to enter it into the selected cell.\n\n" +
-      "Double-tap a cell to clear the number you entered.\n\n" +
-      "Numbers given at the start cannot be changed.\n\n" +
-      "Use the 'Clear' button to remove the selected user-entered number.\n\n" +
-      "Use the 'Show/Hide Errors' button to toggle error highlighting.\n\n" +
-      "Tap 'New Game' or 'Pixoku' title to start a new puzzle.",
+    showCustomDialog(
+      "Game Controls", // Dialog Title
+      "• Tap a cell to select it.\n\n" +
+      "• Tap a number/animal from the pad to enter it into the selected cell.\n\n" +
+      "• Double-tap a cell to clear the number/animal you entered.\n\n" +
+      "• Numbers/animals given at the start cannot be changed.\n\n" +
+      "• Use the 'Clear' button to remove the selected user-entered number/animal.\n\n" +
+      "• Use the 'Eye' button to toggle error highlighting (show/hide incorrect entries).\n\n" +
+      "• Tap 'Refresh' button or 'Pixoku' title to start a new puzzle.",
       [
         {
           text: "Got It!", // Button text
-          onPress: () => console.log("Controls alert closed"),
-          style: "cancel" // Styling for the button (e.g., 'cancel' or 'default')
+          onPress: () => setIsDialogVisible(false), // Dismisses the dialog
+          type: "solid" // RNE button type
         }
       ],
-      { cancelable: true } // Allow user to tap outside to dismiss on Android
+      true // Allow dismissing the alert by tapping outside
     );
+  };
+
+  // Helper function to show custom dialog
+  const showCustomDialog = (title: string, message: string, buttons: any[], cancelable: boolean = true) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogButtons(buttons);
+    setIsDialogVisible(true);
   };
 
 
@@ -324,7 +364,7 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
         <View style={styles.buttonColumn}>
           <TouchableOpacity
                   style={[styles.controlButton, { backgroundColor: 'transparent' }]}
-                  onPress={showControlsAlert}
+                  onPress={() => {showControlsAlert();}}
               >
               {<Icon name="information-outline" size={28} color={ gameDarkerAccentColor } />}
           </TouchableOpacity>
@@ -414,7 +454,51 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
         })}
       </View>
 
-      
+      <Dialog
+          isVisible={isDialogVisible}
+          // The onBackdropPress logic for controls/solved/failed dialogs
+          onBackdropPress={() => {
+            if (dialogButtons.length === 1 && dialogButtons[0].style !== 'cancel' && dialogTitle !== "Game Controls") {
+                // If it's a critical single-button alert (like congrats/fail where no cancel is offered)
+                // and not the controls dialog, tapping outside should NOT dismiss it if cancelable=false.
+                // However, our showCustomDialog sets cancelable: false for critical alerts
+                // so the onBackdropPress in Dialog should only respond if cancelable is true for THIS dialog instance.
+                // Simpler: if dialog was set as cancelable, hide it on backdrop press.
+                 if (dialogButtons.length === 1 && dialogButtons[0].text === "Got It!" && dialogTitle === "Game Controls") {
+                     setIsDialogVisible(false); // Only dismiss controls dialog on backdrop
+                 } else if (dialogButtons.length > 1 && dialogButtons.find(btn => btn.style === 'cancel')) {
+                     // If there's a cancel button, tapping backdrop dismisses it like cancel.
+                     setIsDialogVisible(false);
+                 } else {
+                     // For critical alerts, do nothing on backdrop if not explicitly cancelable
+                 }
+
+            } else {
+                 // For the controls dialog (where we pass true for cancelable), this will dismiss.
+                 setIsDialogVisible(false);
+            }
+          }}
+          animationType="fade"
+      >
+          <Dialog.Title title={dialogTitle} titleStyle={styles.dialogTitleText} />
+          <Text style={styles.dialogMessageText}>{dialogMessage}</Text>
+          <Dialog.Actions>
+              {dialogButtons.map((btn, index) => (
+                  <Button
+                      key={index}
+                      title={btn.text}
+                      onPress={btn.onPress}
+                      type={btn.type || "solid"}
+                      buttonStyle={[
+                        styles.dialogButton,
+                        btn.style === 'cancel' ? styles.dialogCancelButton : {},
+                        { backgroundColor: gameDarkerAccentColor }
+                      ]}
+                      titleStyle={styles.dialogButtonText}
+                  />
+              ))}
+          </Dialog.Actions>
+      </Dialog>
     </View>
   );
 };
@@ -577,5 +661,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '90%',
     marginBottom: 20,
+  },
+  dialogTitleText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#34495E',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  dialogMessageText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  dialogButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  dialogButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  dialogCancelButton: {
+    backgroundColor: '#BDBDBD',
   },
 });

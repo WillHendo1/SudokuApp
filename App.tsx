@@ -10,9 +10,10 @@ import GameScreen from './src/screens/GameScreen';
 import StoreScreen from './src/screens/StoreScreen';
 
 // --- Import types from sudokuLogic.ts (if not already imported by screens) ---
-// It's good practice to centralize shared types or define them in appReducer's file.
-// For now, let's keep them explicit if needed by App.tsx directly or passed as props.
-import { PuzzleData } from './src/utils/sudokuLogic'; // Only PuzzleData is needed here directly for AppState
+import { PuzzleData, Board, Difficulty, Solution } from './src/utils/sudokuLogic';
+
+import { COSMETIC_ITEMS } from './src/constants/cosmeticItems';
+const COSMETIC_ITEM_MAP = new Map(COSMETIC_ITEMS.map(item => [item.id, item]));
 
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -31,7 +32,7 @@ export type AppState = {
 // Define actions for the appReducer (these should stay in App.tsx or a central store file)
 export type AppAction =
   | { type: 'SET_SCREEN'; payload: 'Home' | 'Game' | 'Store' }
-  | { type: 'SET_GAME_DATA'; payload: PuzzleData }
+  | { type: 'SET_GAME_DATA'; payload: { puzzle: Board; solution: Board, initialPuzzle: Board; difficulty: Difficulty } }
   | { type: 'EARN_PIXOS'; payload: number }
   | { type: 'SPEND_PIXOS'; payload: number }
   | { type: 'UNLOCK_ITEM'; payload: string } // Payload is itemId
@@ -75,9 +76,9 @@ const App = () => {
   const [appState, dispatch] = useReducer(appReducer, {
     currentScreen: 'Home',
     gameData: null,
-    pixos: 500,
-    unlockedItems: [],
-    equippedCosmetic: null, 
+    pixos: 100,
+    unlockedItems: ['item_farm_set'],
+    equippedCosmetic: 'item_farm_set', 
   } as AppState);
 
   const [appIsReady, setAppIsReady] = useState(false); // New state to track if fonts/assets are loaded
@@ -145,13 +146,22 @@ const App = () => {
     );
   }
 
+  // --- NEW: Get the currently equipped image set path based on equippedCosmetic ---
+  const equippedImageSetId = appState.equippedCosmetic;
+  const equippedCosmeticData = equippedImageSetId ? COSMETIC_ITEM_MAP.get(equippedImageSetId) : null;
+  const activeImageSetName = equippedCosmeticData?.value || 'farm_set'; // Default to 'farm_set'
+
   return (
     <SafeAreaProvider>
       {appState.currentScreen === 'Home' ? (
         <HomeScreen dispatch={dispatch} appState={appState} />
       ) : appState.currentScreen === 'Game' ? (
         appState.gameData ? (
-          <GameScreen gameData={appState.gameData} dispatch={dispatch} />
+          <GameScreen 
+            gameData={appState.gameData} 
+            dispatch={dispatch} 
+            equippedImageSetName={activeImageSetName}
+          />
         ) : (
           <View style={styles.loadingContainer}>
             <Text>Loading game...</Text>
