@@ -76,7 +76,7 @@ const App = () => {
   const [appState, dispatch] = useReducer(appReducer, {
     currentScreen: 'Home',
     gameData: null,
-    pixos: 100,
+    pixos: 500,
     unlockedItems: ['item_farm_set'],
     equippedCosmetic: 'item_farm_set', 
   } as AppState);

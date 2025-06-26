@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Dialog, Button } from '@rneui/themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppAction, AppState } from '../../App';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -24,6 +25,11 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
       const currentPalette = useRef(PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]).current;
       const gameAccentColor = currentPalette.primary; 
       const gameDarkerAccentColor = currentPalette.darker;
+
+      const [isDialogVisible, setIsDialogVisible] = useState(false);
+      const [dialogTitle, setDialogTitle] = useState('');
+      const [dialogMessage, setDialogMessage] = useState('');
+      const [dialogButtons, setDialogButtons] = useState<any[]>([]);
   
     const handleStartGame = (difficulty: Difficulty) => { // Use Difficulty type
       const { puzzle, solution } = generatePuzzle(difficulty);
@@ -36,6 +42,30 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
           difficulty } });
       dispatch({ type: 'SET_SCREEN', payload: 'Game' });
     };
+
+    const showPixosInfo = () => {
+      showCustomDialog(
+        "What are Pixos?", // Dialog Title
+        "Collect Pixos by solving puzzles.\n\n" +
+        "Spend them in the Store to customize your game with new cosmetic packs!\n\n",
+        [
+          {
+            text: "Got It!", // Button text
+            onPress: () => setIsDialogVisible(false), // Dismisses the dialog
+            type: "solid" // RNE button type
+          }
+        ],
+        true // Allow dismissing the alert by tapping outside
+      );
+    };
+
+    // Helper function to show custom dialog
+  const showCustomDialog = (title: string, message: string, buttons: any[], cancelable: boolean = true) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogButtons(buttons);
+    setIsDialogVisible(true);
+  };
   
     return (
       <View style={[
@@ -44,10 +74,12 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
         { backgroundColor: gameAccentColor }
       ]}>
         <Text style={[styles.homeTitle, {color: gameDarkerAccentColor}]}>Pixoku</Text>
-        <View style={[styles.currencyDisplay, {backgroundColor: gameDarkerAccentColor}]}>
+        <TouchableOpacity 
+          style={[styles.currencyDisplay, {backgroundColor: gameDarkerAccentColor}]}
+          onPress={() => showPixosInfo()}>
         <Text style={styles.currencyText}>{appState.pixos}</Text>
           <Icon name="arrange-bring-to-front" size={24} color="#FFD700" />
-      </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.difficultyButton, {backgroundColor: gameDarkerAccentColor }]}
           onPress={() => handleStartGame('easy')}
@@ -72,6 +104,46 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
       >
         <Text style={styles.difficultyButtonText}>store</Text>
       </TouchableOpacity>
+      <Dialog
+                isVisible={isDialogVisible}
+                // The onBackdropPress logic for controls/solved/failed dialogs
+                onBackdropPress={() => {
+                  if (dialogButtons.length === 1 && dialogButtons[0].style !== 'cancel' && dialogTitle !== "Game Controls") {
+                       if (dialogButtons.length === 1 && dialogButtons[0].text === "Got It!" && dialogTitle === "Game Controls") {
+                           setIsDialogVisible(false); // Only dismiss controls dialog on backdrop
+                       } else if (dialogButtons.length > 1 && dialogButtons.find(btn => btn.style === 'cancel')) {
+                           // If there's a cancel button, tapping backdrop dismisses it like cancel.
+                           setIsDialogVisible(false);
+                       } else {
+                           // For critical alerts, do nothing on backdrop if not explicitly cancelable
+                       }
+      
+                  } else {
+                       // For the controls dialog (where we pass true for cancelable), this will dismiss.
+                       setIsDialogVisible(false);
+                  }
+                }}
+                animationType="fade"
+            >
+                <Dialog.Title title={dialogTitle} titleStyle={styles.dialogTitleText} />
+                <Text style={styles.dialogMessageText}>{dialogMessage}</Text>
+                <Dialog.Actions>
+                    {dialogButtons.map((btn, index) => (
+                        <Button
+                            key={index}
+                            title={btn.text}
+                            onPress={btn.onPress}
+                            type={btn.type || "solid"}
+                            buttonStyle={[
+                              styles.dialogButton,
+                              btn.style === 'cancel' ? styles.dialogCancelButton : {},
+                              { backgroundColor: gameDarkerAccentColor }
+                            ]}
+                            titleStyle={styles.dialogButtonText}
+                        />
+                    ))}
+                </Dialog.Actions>
+            </Dialog>
       </View>
     );
   };
@@ -128,5 +200,32 @@ const styles = StyleSheet.create({
     fontFamily: 'pixelart',
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  dialogTitleText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#34495E',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  dialogMessageText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  dialogButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  dialogButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  dialogCancelButton: {
+    backgroundColor: '#BDBDBD',
   },
 });
