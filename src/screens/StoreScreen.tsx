@@ -1,9 +1,10 @@
 // src/screens/StoreScreen.tsx
 
-import React, { useRef, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, FlatList, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Dialog, Button } from '@rneui/themed';
 
 // Import types from App.tsx or a shared types file
 import { AppAction, AppState } from '../../App'; // Adjust path if AppAction/AppState are elsewhere
@@ -24,37 +25,76 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
     const gameAccentColor = currentPalette.primary; 
     const gameDarkerAccentColor = currentPalette.darker;
 
-  const handleBuyItem = (item: CosmeticItem) => {
-    if (unlockedItems.includes(item.id)) {
-      Alert.alert("Owned", "You already own this item!");
-      return;
-    }
-    if (pixos >= item.cost) {
-      Alert.alert(
-        "Confirm Purchase",
-        `Buy "${item.name}" for ${item.cost} pixos?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Buy", onPress: () => {
-              dispatch({ type: 'SPEND_PIXOS', payload: item.cost });
-              dispatch({ type: 'UNLOCK_ITEM', payload: item.id });
-              Alert.alert("Success!", `You bought "${item.name}"!`);
+    const [isDialogVisible, setIsDialogVisible] = useState(false);
+    const [dialogTitle, setDialogTitle] = useState('');
+    const [dialogMessage, setDialogMessage] = useState('');
+    const [dialogButtons, setDialogButtons] = useState<any[]>([]);
+
+      // Helper function to show custom dialog
+    const showCustomDialog = (title: string, message: string, buttons: any[], cancelable: boolean = true) => {
+        setDialogTitle(title);
+        setDialogMessage(message);
+        setDialogButtons(buttons);
+        setIsDialogVisible(true);
+    };
+
+    const handleBuyItem = (item: CosmeticItem) => {
+        if (pixos >= item.cost) {
+        showCustomDialog(
+            "Confirm Purchase",
+            `Buy "${item.name}" for ${item.cost} pixos?`,
+            [
+            { 
+                text: "Cancel", 
+                style: "cancel",
+                onPress: () => setIsDialogVisible(false),
+            },
+            { text: "Buy", onPress: () => {
+                dispatch({ type: 'SPEND_PIXOS', payload: item.cost });
+                dispatch({ type: 'UNLOCK_ITEM', payload: item.id });
+                showCustomDialog(
+                    "Success!", 
+                    `You bought "${item.name}"!`,
+                     [
+                        {
+                            text: "Great!", 
+                            onPress: () => setIsDialogVisible(false),
+                            type: "solid" 
+                        }
+                     ]
+                );
+                }
             }
-          }
-        ]
-      );
-    } else {
-      Alert.alert("Not Enough Pixos", `You need ${item.cost - pixos} more pixos to buy "${item.name}".`);
-    }
-  };
+            ]
+        );
+        } else {
+            showCustomDialog(
+                "Not Enough Pixos", 
+                `You need ${item.cost - pixos} more pixos to buy "${item.name}".`,
+                [
+                    {
+                        text: "Got It!", 
+                        onPress: () => setIsDialogVisible(false),
+                        type: "solid" 
+                    }
+                 ]
+            );
+        }
+    };
 
   const handleEquipItem = (item: CosmeticItem) => {
-    if (!unlockedItems.includes(item.id)) {
-      Alert.alert("Error", "You don't own this item!");
-      return;
-    }
     dispatch({ type: 'EQUIP_ITEM', payload: item.id });
-    Alert.alert("Equipped!", `You equipped "${item.name}".`);
+    showCustomDialog(
+        "Equipped!", 
+        `You equipped "${item.name}".`,
+        [
+            {
+                text: "Okay", 
+                onPress: () => setIsDialogVisible(false),
+                type: "solid" 
+            }
+         ]
+    );
   };
 
   const renderItem = ({ item }: { item: CosmeticItem }) => {
@@ -68,7 +108,7 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
           <Image source={item.image} style={styles.storeItemImage} resizeMode="contain" />
         ) : (
         <View style={styles.storeItemImagePlaceholder}>
-            <Text style={styles.noImagePlaceholderText}>No Image</Text> {/* Or an Icon */}
+            <Text style={styles.noImagePlaceholderText}>No Image</Text>
         </View>
         )}
         <Text style={styles.storeItemName}>{item.name}</Text>
@@ -113,6 +153,47 @@ const StoreScreen = ({ dispatch, appState }: StoreScreenProps) => {
         columnWrapperStyle={styles.rowWrapper} // Space between columns
         contentContainerStyle={styles.flatListContent}
       />
+      <Dialog
+                isVisible={isDialogVisible}
+                // The onBackdropPress logic for controls/solved/failed dialogs
+                onBackdropPress={() => {
+                  if (dialogButtons.length === 1 && dialogButtons[0].style !== 'cancel' && dialogTitle !== "Confirm Purchase") {
+                       if (dialogButtons.length === 1 && dialogButtons[0].text === "Got It!" && dialogTitle === "Confirm Purchase") {
+                           setIsDialogVisible(false); // Only dismiss controls dialog on backdrop
+                       } else if (dialogButtons.length > 1 && dialogButtons.find(btn => btn.style === 'cancel')) {
+                           // If there's a cancel button, tapping backdrop dismisses it like cancel.
+                           setIsDialogVisible(false);
+                       } else {
+                           // For critical alerts, do nothing on backdrop if not explicitly cancelable
+                       }
+      
+                  } else {
+                       // For the controls dialog (where we pass true for cancelable), this will dismiss.
+                       setIsDialogVisible(false);
+                  }
+                }}
+                animationType="fade"
+                overlayStyle={styles.dialogOverlay}
+            >
+                <Dialog.Title title={dialogTitle} titleStyle={styles.dialogTitleText} />
+                <Text style={styles.dialogMessageText}>{dialogMessage}</Text>
+                <Dialog.Actions>
+                    {dialogButtons.map((btn, index) => (
+                        <Button
+                            key={index}
+                            title={btn.text}
+                            onPress={btn.onPress}
+                            type={btn.type || "solid"}
+                            buttonStyle={[
+                              styles.dialogButton,
+                              btn.style === 'cancel' ? styles.dialogCancelButton : {},
+                              { backgroundColor: gameDarkerAccentColor }
+                            ]}
+                            titleStyle={styles.dialogButtonText}
+                        />
+                    ))}
+                </Dialog.Actions>
+            </Dialog>
     </View>
   );
 };
@@ -226,14 +307,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#BDBDBD', // Gray when disabled
   },
   affordableActionButton: {
-    backgroundColor: '#FFD700', // <--- A vibrant gold/yellow to indicate affordability
-    // You could also add a border here for extra emphasis:
-    // borderColor: '#FFA500',
-    // borderWidth: 2,
+    backgroundColor: '#C67664',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 8,
+  },
+  dialogTitleText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#34495E',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  dialogMessageText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  dialogButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  dialogButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  dialogCancelButton: {
+    backgroundColor: '#BDBDBD',
+  },
+  dialogOverlay: {
+    borderRadius: 20,
   },
 });

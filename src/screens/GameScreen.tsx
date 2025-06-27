@@ -479,6 +479,7 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
             }
           }}
           animationType="fade"
+          overlayStyle = {styles.dialogOverlay}
       >
           <Dialog.Title title={dialogTitle} titleStyle={styles.dialogTitleText} />
           <Text style={styles.dialogMessageText}>{dialogMessage}</Text>
@@ -688,5 +689,8 @@ const styles = StyleSheet.create({
   },
   dialogCancelButton: {
     backgroundColor: '#BDBDBD',
+  },
+  dialogOverlay: {
+    borderRadius: 20,
   },
 });
