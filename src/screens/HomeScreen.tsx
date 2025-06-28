@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { Dialog, Button } from '@rneui/themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppAction, AppState } from '../../App';
@@ -73,6 +73,21 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
         { backgroundColor: gameAccentColor }
       ]}>
+        <Image
+          source={require('../../assets/images/clouds/cloud_1.png')}
+          style={styles.cloudOne}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../../assets/images/clouds/cloud_2.png')}
+          style={styles.cloudTwo}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../../assets/images/clouds/cloud_3.png')}
+          style={styles.cloudThree}
+          resizeMode="contain"
+        />
         <Text style={[styles.homeTitle, {color: gameDarkerAccentColor}]}>Pixoku</Text>
         <TouchableOpacity 
           style={[styles.currencyDisplay, {backgroundColor: gameDarkerAccentColor}]}
@@ -104,6 +119,7 @@ const HomeScreen = ({ dispatch, appState }: HomeScreenProps) => {
       >
         <Text style={styles.difficultyButtonText}>store</Text>
       </TouchableOpacity>
+        
       <Dialog
                 isVisible={isDialogVisible}
                 // The onBackdropPress logic for controls/solved/failed dialogs
@@ -232,4 +248,26 @@ const styles = StyleSheet.create({
   dialogOverlay: {
     borderRadius: 20,
   },
+  cloudOne: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    left: -30,
+    top: 10,
+  },
+  cloudTwo: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    left: 100,
+    top: 600,
+  },
+  cloudThree: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    right: -10,
+    top: 80,
+  },
+
 });

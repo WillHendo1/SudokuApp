@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, Vibration } from 'react-native';
 import { Dialog, Button } from '@rneui/themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -147,12 +147,6 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
 
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const confettiRef1 = useRef<LottieView>(null);
-  const confettiRef2 = useRef<LottieView>(null);
-
-  // You'll need to update the PuzzleData type in sudokuLogic.ts
-  // to include initialPuzzle, as it's being passed here.
-  // Add initialPuzzle: Board; to the PuzzleData type in sudokuLogic.ts
   useEffect(() => {
     const isBoardFull = board.every(row => row.every(cell => cell !== 0));
     if (isBoardFull) {
@@ -160,9 +154,11 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
       // Note: solveSudoku modifies the board in place, so pass a copy
       if (solveSudoku(tempBoard) && JSON.stringify(tempBoard) === JSON.stringify(gameData.solution)) {
         setIsSolved(true);
+        setShowErrors(false); // Removes all cell highlights
         // Display confetti
         setShowConfetti(true);
         // --- Calculate reward based on difficulty ---
+        Vibration.vibrate(200)
         let pixosEarned = 0;
         switch (gameData.difficulty) { // Access difficulty from gameData
             case 'easy':
@@ -371,6 +367,9 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
 
     // Trigger the confetti animation
     setShowConfetti(true);
+    setShowErrors(false);
+
+    Vibration.vibrate(200);
   
   
     // Dispatch an action to set the grid to a solved state
@@ -518,7 +517,7 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
             );
         })}
 
-        <TouchableOpacity onPress={handleTestWin} style={styles.testButton}>
+        <TouchableOpacity onPress={handleTestWin} style={[styles.testButton, { backgroundColor: gameDarkerAccentColor} ]}>
             <Icon name="crown" size={32} color="#FFD700" />
             <Text style={styles.testButtonText}>Test Win</Text>
         </TouchableOpacity>
@@ -773,12 +772,13 @@ const styles = StyleSheet.create({
   // for testing...
   testButton: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     padding: 10,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)', // A light yellow background
     position: 'absolute', // Position it absolutely in the header
-    left: 60, // Adjust position as needed
+    left: 130, // Adjust position as needed
+    bottom: -30
   },
   testButtonText: {
     fontFamily: 'pixelart',
