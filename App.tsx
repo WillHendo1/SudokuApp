@@ -64,7 +64,6 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
           unlockedItems: action.payload.unlockedItems,
           equippedCosmetic: action.payload.equippedCosmetic,
         };
-      // --- END NEW ---
       default:
         return state;
     }

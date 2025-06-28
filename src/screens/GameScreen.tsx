@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isValid, solveSudoku, Board, PuzzleData } from '../utils/sudokuLogic';
 import { AppAction, AppState } from '../../App'
 import { PASTEL_COLORS } from '../constants/colors';
+import ConfettiAnimation from '../components/ConfettiAnimation';
+import LottieView from 'lottie-react-native';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -143,6 +145,10 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
   const [dialogMessage, setDialogMessage] = useState('');
   const [dialogButtons, setDialogButtons] = useState<any[]>([]);
 
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const confettiRef1 = useRef<LottieView>(null);
+  const confettiRef2 = useRef<LottieView>(null);
 
   // You'll need to update the PuzzleData type in sudokuLogic.ts
   // to include initialPuzzle, as it's being passed here.
@@ -154,6 +160,8 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
       // Note: solveSudoku modifies the board in place, so pass a copy
       if (solveSudoku(tempBoard) && JSON.stringify(tempBoard) === JSON.stringify(gameData.solution)) {
         setIsSolved(true);
+        // Display confetti
+        setShowConfetti(true);
         // --- Calculate reward based on difficulty ---
         let pixosEarned = 0;
         switch (gameData.difficulty) { // Access difficulty from gameData
@@ -169,17 +177,19 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
             default:
                 pixosEarned = 1; // Fallback
         }
-        showCustomDialog(
-          "Congratulations!",
-          `You solved the puzzle! You earned ${pixosEarned} pixos!`,
-          [
-            { text: "Awesome!", onPress: () => {
-                setIsDialogVisible(false); // Hide dialog
-                dispatch({ type: 'EARN_PIXOS', payload: pixosEarned });
-                dispatch({ type: 'SET_SCREEN', payload: 'Home' });
-            }}
-          ]
-        );
+        setTimeout(() => {
+          showCustomDialog(
+              "Congratulations!",
+              `You solved the puzzle! You earned ${pixosEarned} pixos!`,
+              [
+                  { text: "Home", onPress: () => {
+                      setIsDialogVisible(false); // Hide dialog
+                      dispatch({ type: 'EARN_PIXOS', payload: pixosEarned });
+                      dispatch({ type: 'SET_SCREEN', payload: 'Home' });
+                  }}
+              ]
+          );
+      }, 4000);
       } else if (isBoardFull) {
         setIsSolved(false);
         showCustomDialog( // <--- Use custom dialog here
@@ -342,6 +352,61 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
     setIsDialogVisible(true);
   };
 
+  // ----------  TESTING  ----------
+  const solvedTestGrid = [
+    [5, 3, 4, 6, 7, 8, 9, 1, 2],
+    [6, 7, 2, 1, 9, 5, 3, 4, 8],
+    [1, 9, 8, 3, 4, 2, 5, 6, 7],
+    [8, 5, 9, 7, 6, 1, 4, 2, 3],
+    [4, 2, 6, 8, 5, 3, 7, 9, 1],
+    [7, 1, 3, 9, 2, 4, 8, 5, 6],
+    [9, 6, 1, 5, 3, 7, 2, 8, 4],
+    [2, 8, 7, 4, 1, 9, 6, 3, 5],
+    [3, 4, 5, 2, 8, 6, 1, 7, 9],
+];
+
+  // Function to trigger the win state for testing
+  const handleTestWin = () => {
+    const pixosEarned = 10; // Or whatever amount you want to test
+
+    // Trigger the confetti animation
+    setShowConfetti(true);
+  
+  
+    // Dispatch an action to set the grid to a solved state
+    dispatch({
+      type: 'SET_GAME_DATA',
+      payload: {
+          puzzle: solvedTestGrid,        // The current grid is the solved grid
+          solution: solvedTestGrid,      // The solution is also the solved grid
+          initialPuzzle: solvedTestGrid, // The initial puzzle can be the solved grid for this test
+          difficulty: 'easy',            // Set a dummy difficulty for the test
+      },
+    });
+  
+  
+
+    setTimeout(() => {
+      showCustomDialog(
+          "Congratulations!",
+          `You solved the puzzle! You earned ${pixosEarned} pixos!`,
+          [
+              { text: "Home", onPress: () => {
+                  setIsDialogVisible(false); // Hide dialog
+                  dispatch({ type: 'EARN_PIXOS', payload: pixosEarned });
+                  dispatch({ type: 'SET_SCREEN', payload: 'Home' });
+              }}
+          ]
+      );
+    }, 4000);
+
+  
+    // Add pixos to the user's balance
+    dispatch({ type: 'EARN_PIXOS', payload: pixosEarned });
+  };
+
+ // ----------  END TESTING  ----------
+
 
   return (
     <View style={[styles.gameContainer,
@@ -358,8 +423,9 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
         {isSolved && <TouchableOpacity
             onPress={() => dispatch({ type: 'SET_SCREEN', payload: 'Home' })}
           >
-            <Text style={styles.solvedMessage}>Puzzle Solved!</Text>
           </TouchableOpacity>}
+          {/* Conditionally render the test button only in development mode */}
+    
         
         <View style={styles.buttonColumn}>
           <TouchableOpacity
@@ -380,7 +446,6 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
               )}
           </TouchableOpacity>
         </View>
-        
       </View>
       
 
@@ -452,7 +517,19 @@ const GameScreen = ({ gameData, dispatch, equippedImageSetName }: GameScreenProp
                 </TouchableOpacity>
             );
         })}
+
+        <TouchableOpacity onPress={handleTestWin} style={styles.testButton}>
+            <Icon name="crown" size={32} color="#FFD700" />
+            <Text style={styles.testButtonText}>Test Win</Text>
+        </TouchableOpacity>
       </View>
+
+      {showConfetti && (
+    <>
+        <ConfettiAnimation style={{ top: '0%', left: '25%', width: '50%', height: '50%' }} />
+        <ConfettiAnimation style={{ top: '60%', left: '25%', width: '50%', height: '50%' }} />
+    </>
+)}
 
       <Dialog
           isVisible={isDialogVisible}
@@ -692,5 +769,21 @@ const styles = StyleSheet.create({
   },
   dialogOverlay: {
     borderRadius: 20,
+  },
+  // for testing...
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)', // A light yellow background
+    position: 'absolute', // Position it absolutely in the header
+    left: 60, // Adjust position as needed
+  },
+  testButtonText: {
+    fontFamily: 'pixelart',
+    color: '#FFD700',
+    fontSize: 14,
+    marginLeft: 5,
   },
 });
